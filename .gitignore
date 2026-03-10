@@ -1,0 +1,9 @@
+# Dev only — not part of the app
+package.json
+package-lock.json
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+*.log

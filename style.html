@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#c8502a">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<meta property="og:title" content="Style Settings — RxCal">
+<meta property="og:description" content="Customize colors, dark mode, and print settings for RxCal.">
+<meta property="og:image" content="https://rxcal.app/og-image.png">
+<meta property="og:url" content="https://rxcal.app/style.html">
+<meta property="og:type" content="website">
+<title>Style — RxCal</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header><div class="header-inner" style="display:flex;align-items:flex-start;justify-content:space-between;">
+  <div>
+    <div class="logo"><a href="/">Rx<span>Cal</span></a></div>
+    <div class="tagline">medication schedule + calendar export</div>
+  </div>
+  <a href="/" style="font-family:var(--mono);font-size:0.68rem;letter-spacing:0.04em;color:#a89c8e;text-decoration:none;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:0.4rem 0.75rem;margin-top:0.25rem;transition:color 0.15s,border-color 0.15s;white-space:nowrap;" onmouseover="this.style.color='#faf7f2';this.style.borderColor='rgba(255,255,255,0.4)'" onmouseout="this.style.color='#a89c8e';this.style.borderColor='rgba(255,255,255,0.15)'">← Back to app</a>
+</div></header>
+
+<main style="max-width:520px;margin:0 auto;padding:2rem 1.5rem 3rem;">
+
+  <div class="card" style="background:var(--card);border-radius:12px;padding:2rem;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:1.5rem;">
+
+    <!-- Appearance -->
+    <div class="sp-section">
+      <div class="sp-section-title">Appearance</div>
+      <div class="sp-theme-toggle">
+        <button class="sp-theme-btn" id="spThemeSystem" onclick="setTheme('system')">⚙ System</button>
+        <button class="sp-theme-btn" id="spThemeLight"  onclick="setTheme('light')">☀ Light</button>
+        <button class="sp-theme-btn" id="spThemeDark"   onclick="setTheme('dark')">☾ Dark</button>
+      </div>
+      <div class="sp-theme-desc" id="spThemeDesc">Follows your device preference.</div>
+    </div>
+
+    <!-- Preview -->
+    <div class="sp-section">
+      <div class="sp-section-title">Preview</div>
+      <div class="sp-logo-preview" id="spLogoPreview">
+        <div>
+          <div class="sp-logo-text">Rx<span class="sp-logo-span" id="spLogoSpan">Cal</span></div>
+          <div class="sp-grad-bar" id="spGradBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Print Mode -->
+    <div class="sp-section">
+      <div class="sp-section-title">Print Mode</div>
+      <div class="sp-print-toggle">
+        <button class="sp-print-btn active" id="spColorBtn" onclick="setPrintMode('color')">🎨 Color</button>
+        <button class="sp-print-btn" id="spBwBtn" onclick="setPrintMode('bw')">⬛ B&amp;W / Grayscale</button>
+      </div>
+    </div>
+
+    <!-- Color pickers -->
+    <div id="spColorSection" class="sp-section">
+      <div class="sp-section-title">Medication Colors</div>
+      <div class="sp-color-row">
+        <div class="sp-color-swatch" id="swatchMed1"></div>
+        <label>Med 1 (sets logo &amp; gradient)</label>
+        <input type="color" id="pickerMed1" value="#c8502a" oninput="applyColor('med1', this.value)">
+      </div>
+      <div class="sp-color-row">
+        <div class="sp-color-swatch" id="swatchMed2"></div>
+        <label>Med 2</label>
+        <input type="color" id="pickerMed2" value="#2a6fc8" oninput="applyColor('med2', this.value)">
+      </div>
+      <div class="sp-color-row">
+        <div class="sp-color-swatch" id="swatchMed3"></div>
+        <label>Med 3</label>
+        <input type="color" id="pickerMed3" value="#3a7d5e" oninput="applyColor('med3', this.value)">
+      </div>
+    </div>
+
+    <!-- B&W patterns -->
+    <div id="spBwSection" class="sp-section" style="display:none;">
+      <div class="sp-section-title">Patterns</div>
+      <div class="sp-med-pattern">
+        <div class="sp-med-pattern-label"><span class="sp-med-dot" id="bwDot1"></span>Med 1 pattern</div>
+        <div class="sp-pattern-grid" id="patternGridMed1"></div>
+      </div>
+      <div class="sp-med-pattern">
+        <div class="sp-med-pattern-label"><span class="sp-med-dot" id="bwDot2"></span>Med 2 pattern</div>
+        <div class="sp-pattern-grid" id="patternGridMed2"></div>
+      </div>
+      <div class="sp-med-pattern">
+        <div class="sp-med-pattern-label"><span class="sp-med-dot" id="bwDot3"></span>Med 3 pattern</div>
+        <div class="sp-pattern-grid" id="patternGridMed3"></div>
+      </div>
+    </div>
+
+    <!-- Colorblind presets -->
+    <div class="sp-section">
+      <div class="sp-section-title">Colorblind-Friendly Presets</div>
+      <button class="sp-cb-btn" onclick="applyColorblindPreset('deuteranopia', this)">
+        Deuteranopia / Protanopia
+        <span class="sp-cb-swatches">
+          <span class="sp-cb-swatch" style="background:#0077bb"></span>
+          <span class="sp-cb-swatch" style="background:#ee7733"></span>
+          <span class="sp-cb-swatch" style="background:#009988"></span>
+        </span>
+      </button>
+      <button class="sp-cb-btn" onclick="applyColorblindPreset('tritanopia', this)">
+        Tritanopia
+        <span class="sp-cb-swatches">
+          <span class="sp-cb-swatch" style="background:#cc3311"></span>
+          <span class="sp-cb-swatch" style="background:#004488"></span>
+          <span class="sp-cb-swatch" style="background:#ddaa33"></span>
+        </span>
+      </button>
+      <button class="sp-cb-btn" onclick="applyColorblindPreset('highcontrast', this)">
+        High Contrast
+        <span class="sp-cb-swatches">
+          <span class="sp-cb-swatch" style="background:#000000"></span>
+          <span class="sp-cb-swatch" style="background:#e69f00"></span>
+          <span class="sp-cb-swatch" style="background:#56b4e9"></span>
+        </span>
+      </button>
+      <p class="sp-cb-note">Presets replace custom colors with accessible palettes verified for common color vision deficiencies.</p>
+    </div>
+
+    <button class="sp-reset" onclick="resetStyles()">↺ Reset to defaults</button>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="/">Home</a>
+    <a href="about.html">About</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms</a>
+    <a href="https://github.com/joshhearne/rxcal" target="_blank" rel="noopener">GitHub</a>
+  </div>
+  <div class="footer-copy">© 2026 HearneTech · MIT License · rxcal.app</div>
+</footer>
+
+
+<script src="style.js"></script>
+</body>
+</html>

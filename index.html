@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Free medication schedule generator with calendar export. Single meds or fever rotation up to 3 medications. Private, no account, no data stored.">
+<meta name="theme-color" content="#c8502a">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.json">
+<!-- Open Graph -->
+<meta property="og:title" content="RxCal — Medication Schedule Generator">
+<meta property="og:description" content="Free medication schedule generator with .ics calendar export. No account, no data stored.">
+<meta property="og:image" content="https://rxcal.app/og-image.png">
+<meta property="og:url" content="https://rxcal.app/">
+<meta property="og:type" content="website">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="RxCal — Medication Schedule Generator">
+<meta name="twitter:description" content="Free medication schedule generator with .ics calendar export. No account, no data stored.">
+<meta name="twitter:image" content="https://rxcal.app/og-image.png">
+<title>RxCal — Medication Schedule + Calendar Export</title>
+
+
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">Rx<span>Cal</span></div>
+    <div class="tagline">medication schedule + calendar export</div>
+  </div>
+</header>
+
+<main>
+
+  <div class="notice-strip privacy-strip" id="privacyBanner">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Everything runs in your browser. No data is sent anywhere. Ever.
+    <button class="dismiss" onclick="dismissBanner('privacyBanner')" aria-label="Dismiss">×</button>
+  </div>
+  <div class="notice-strip disclaimer-strip" id="disclaimerBanner">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Not medical advice. Always follow your doctor or pharmacist's instructions.
+    <button class="dismiss" onclick="dismissBanner('disclaimerBanner')" aria-label="Dismiss">×</button>
+  </div>
+
+  <!-- ── FORM ── -->
+  <div class="card" id="form-card">
+
+    <!-- Prescribed to -->
+    <div class="field-grid full" style="margin-bottom:1.25rem;">
+      <div class="field">
+        <label>Prescribed To</label>
+        <input type="text" id="patientName" placeholder="e.g. Emma" />
+      </div>
+    </div>
+
+    <!-- Mode toggle -->
+    <div class="card-title">Schedule Type</div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="modeSingleBtn" onclick="setAppMode('single')">💊 Single Medication</button>
+      <button class="mode-btn" id="modeRotationBtn" onclick="setAppMode('rotation')">🌡 Fever Reduction</button>
+    </div>
+
+    <!-- SINGLE MED -->
+    <div id="section-single">
+      <div class="card-title">Medication Info</div>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div class="field-grid">
+          <div class="field"><label>Medication Name</label><input type="text" id="s_medName" placeholder="e.g. Amoxicillin" /></div>
+          <div class="field"><label>Dosage</label><input type="text" id="s_dosage" placeholder="e.g. 5mL" /></div>
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label>Frequency</label>
+            <select id="s_frequency">
+              <option value="1">Once daily</option>
+              <option value="2" selected>Twice daily</option>
+              <option value="3">Three times daily</option>
+              <option value="4">Four times daily</option>
+            </select>
+          </div>
+          <div class="field"><label>First Dose — Time</label><input type="time" id="s_startTime" value="08:00" /></div>
+        </div>
+        <div class="field-grid">
+          <div class="field"><label>Start Date</label><input type="date" id="s_startDate" /></div>
+        </div>
+        <div id="section-end-single" class="field">
+          <label>End By</label>
+          <div class="toggle-row">
+            <button class="toggle-btn active" id="s_byDosesBtn" onclick="setSingleMode('doses')">Total Doses</button>
+            <button class="toggle-btn" id="s_byDaysBtn" onclick="setSingleMode('days')">Number of Days</button>
+          </div>
+          <input type="number" id="s_endValue" min="1" max="200" value="10" />
+          <div style="font-family:var(--mono);font-size:0.68rem;color:var(--warm-mid);margin-top:0.3rem;" id="s_endHint">Enter total number of doses</div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- FEVER ROTATION -->
+    <div id="section-rotation">
+      <div class="card-title">Fever Reduction</div>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+
+        <!-- Med 1 — always shown -->
+        <div class="med-panel med1">
+          <div class="med-panel-label">● Med 1 (given first)</div>
+          <div class="field-grid">
+            <div class="field"><label>Name</label><input type="text" id="r_med1Name" placeholder="e.g. Tylenol" value="Tylenol" /></div>
+            <div class="field"><label>Dosage</label><input type="text" id="r_med1Dose" placeholder="e.g. 5mL" /></div>
+          </div>
+        </div>
+
+        <!-- Add Med 2 button -->
+        <div id="addMed2Row" style="display:flex;justify-content:center;">
+          <button type="button" onclick="addMed(2)" style="
+            font-family:var(--mono);font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;
+            background:var(--cream);border:1.5px dashed var(--border);border-radius:20px;
+            padding:0.4rem 1.1rem;color:var(--warm-mid);cursor:pointer;transition:all 0.15s;">
+            + Add Second Medication
+          </button>
+        </div>
+
+        <!-- Med 2 panel (hidden until added) -->
+        <div id="med2Block" style="display:none;flex-direction:column;gap:0.6rem;">
+          <div style="display:flex;justify-content:center;align-items:center;">
+            <button onclick="swapMeds()" type="button" style="
+              font-family:var(--mono);font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;
+              background:var(--cream);border:1.5px solid var(--border);border-radius:20px;
+              padding:0.35rem 0.9rem;color:var(--warm-mid);cursor:pointer;
+              display:flex;align-items:center;gap:0.4rem;transition:all 0.15s;">
+              ⇅ Swap Meds
+            </button>
+          </div>
+          <div class="med-panel med2" style="position:relative;">
+            <button type="button" onclick="removeMed(2)" style="
+              position:absolute;top:0.6rem;right:0.6rem;background:none;border:none;
+              font-size:0.9rem;color:var(--warm-mid);cursor:pointer;line-height:1;" title="Remove">×</button>
+            <div class="med-panel-label">● Med 2</div>
+            <div class="field-grid">
+              <div class="field"><label>Name</label><input type="text" id="r_med2Name" placeholder="e.g. Motrin" value="Motrin" /></div>
+              <div class="field"><label>Dosage</label><input type="text" id="r_med2Dose" placeholder="e.g. 5mL" /></div>
+            </div>
+          </div>
+
+          <!-- Add Med 3 button -->
+          <div id="addMed3Row" style="display:flex;justify-content:center;">
+            <button type="button" onclick="addMed(3)" style="
+              font-family:var(--mono);font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;
+              background:var(--cream);border:1.5px dashed var(--border);border-radius:20px;
+              padding:0.4rem 1.1rem;color:var(--warm-mid);cursor:pointer;transition:all 0.15s;">
+              + Add Third Medication
+            </button>
+          </div>
+
+          <!-- Med 3 panel (hidden until added) -->
+          <div id="med3Block" style="display:none;">
+            <div class="med-panel med3" style="position:relative;">
+              <button type="button" onclick="removeMed(3)" style="
+                position:absolute;top:0.6rem;right:0.6rem;background:none;border:none;
+                font-size:0.9rem;color:var(--warm-mid);cursor:pointer;line-height:1;" title="Remove">×</button>
+              <div class="med-panel-label">● Med 3</div>
+              <div class="field-grid">
+                <div class="field"><label>Name</label><input type="text" id="r_med3Name" placeholder="e.g. Ibuprofen" /></div>
+                <div class="field"><label>Dosage</label><input type="text" id="r_med3Dose" placeholder="e.g. 5mL" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field"><label>Start Date</label><input type="date" id="r_startDate" /></div>
+          <div class="field"><label>First Dose Time</label><input type="time" id="r_startTime" value="08:00" /></div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label>Interval Between Doses</label>
+            <select id="r_interval">
+              <option value="3">Every 3 hours</option>
+              <option value="4" selected>Every 4 hours</option>
+              <option value="6">Every 6 hours</option>
+              <option value="8">Every 8 hours</option>
+            </select>
+            <div style="font-family:var(--mono);font-size:0.68rem;color:var(--warm-mid);margin-top:0.35rem;line-height:1.4;" id="r_intervalHint">
+              Time between each dose. e.g. 4h: Tylenol 8am → Motrin 12pm → Tylenol 4pm
+            </div>
+          </div>
+          <div class="field">
+            <label>Temp Check Every</label>
+            <select id="r_checkInterval">
+              <option value="1">Every 1 hour</option>
+              <option value="2" selected>Every 2 hours</option>
+              <option value="3">Every 3 hours</option>
+              <option value="4">Every 4 hours (dose only)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Advanced toggle — only shown when 2+ meds active -->
+        <div id="advancedToggleRow" style="display:none;margin-top:0.25rem;">
+          <button type="button" id="advancedToggleBtn" onclick="toggleAdvanced()"
+            style="font-family:var(--mono);font-size:0.68rem;letter-spacing:0.06em;text-transform:uppercase;
+                   background:none;border:none;color:var(--warm-mid);cursor:pointer;padding:0;
+                   display:flex;align-items:center;gap:0.35rem;">
+            <span id="advancedArrow">▶</span> Advanced — different intervals per med
+          </button>
+          <div id="advancedSection" style="display:none;margin-top:0.75rem;">
+            <div style="font-family:var(--mono);font-size:0.68rem;color:var(--warm-mid);margin-bottom:0.6rem;line-height:1.5;
+                        background:#f5f0e8;border:1.5px solid var(--border);border-radius:7px;padding:0.6rem 0.75rem;">
+              When enabled, each med uses its own repeat interval. The shared interval above is ignored.
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.5rem;" id="advancedIntervalFields">
+              <div class="field">
+                <label id="adv_med1_label">Med 1 — repeats every</label>
+                <select id="r_interval_med1">
+                  <option value="4" selected>Every 4 hours</option>
+                  <option value="6">Every 6 hours</option>
+                  <option value="8">Every 8 hours</option>
+                </select>
+              </div>
+              <div class="field" id="adv_med2_field">
+                <label id="adv_med2_label">Med 2 — repeats every</label>
+                <select id="r_interval_med2">
+                  <option value="4">Every 4 hours</option>
+                  <option value="6" selected>Every 6 hours</option>
+                  <option value="8">Every 8 hours</option>
+                </select>
+              </div>
+              <div class="field" id="adv_med3_field" style="display:none;">
+                <label id="adv_med3_label">Med 3 — repeats every</label>
+                <select id="r_interval_med3">
+                  <option value="4">Every 4 hours</option>
+                  <option value="6" selected>Every 6 hours</option>
+                  <option value="8">Every 8 hours</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label>Schedule Duration</label>
+            <div class="toggle-row">
+              <button class="toggle-btn active" id="r_byDurationBtn" onclick="setRotationMode('duration')">Hours</button>
+              <button class="toggle-btn" id="r_byDosesBtn" onclick="setRotationMode('doses')">Doses Each</button>
+            </div>
+            <input type="number" id="r_endValue" min="1" max="200" value="48" />
+            <div style="font-family:var(--mono);font-size:0.68rem;color:var(--warm-mid);margin-top:0.3rem;" id="r_endHint">Total hours for all meds combined (e.g. 12 = 8am to 8pm)</div>
+          </div>
+          <div class="field">
+            <label>Temperature Unit</label>
+            <div class="toggle-row" style="margin-bottom:0;">
+              <button class="toggle-btn active" id="r_tempFBtn" onclick="setTempUnit('F')">°F Fahrenheit</button>
+              <button class="toggle-btn" id="r_tempCBtn" onclick="setTempUnit('C')">°C Celsius</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <button class="btn-generate" onclick="generate()">Generate Schedule →</button>
+  </div>
+
+  <!-- ── OUTPUT ── -->
+  <div id="output">
+    <div class="card">
+
+      <!-- Print header (hidden on screen, shown on print) -->
+      <div class="print-header-meta" id="printHeaderMeta"></div>
+      <div class="print-legend" id="printLegend">
+        <div class="legend-item"><div class="legend-swatch swatch-med1"></div><span id="legendMed1Label">Med 1</span></div>
+        <div class="legend-item" id="legendMed2Item" style="display:none;"><div class="legend-swatch swatch-med2"></div><span id="legendMed2Label">Med 2</span></div>
+        <div class="legend-item" id="legendMed3Item" style="display:none;"><div class="legend-swatch swatch-med3"></div><span id="legendMed3Label">Med 3</span></div>
+        <div class="legend-item"><div class="legend-swatch swatch-check"></div><span>Checkpoint / temp check</span></div>
+      </div>
+
+      <div class="schedule-header">
+        <div class="schedule-title" id="outTitle"></div>
+        <div class="schedule-meta" id="outMeta"></div>
+      </div>
+
+      <table class="dose-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Day / Date</th>
+            <th>Action</th>
+            <th id="notesColHeader">Notes</th>
+            <th class="col-temp" id="tempColHeader">Temp</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleRows"></tbody>
+      </table>
+
+      <!-- Action buttons -->
+      <div class="action-row">
+        <button class="btn-dark" onclick="downloadICS()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download .ics
+        </button>
+        <button class="btn-dark btn-blue" onclick="window.print()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print Schedule
+        </button>
+      </div>
+      <button class="btn-dark" style="margin-top:0.6rem;background:#5a4a3a;" onclick="shareSchedule()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        <span id="shareBtnText">Share / Copy Link</span>
+      </button>
+      <div class="ics-note">Apple Calendar · Google Calendar · Outlook · Samsung Calendar</div>
+
+      <div class="divider"><span>or copy .ics manually</span></div>
+      <div class="fallback-label">Can't download? Copy text → save as filename.ics</div>
+      <textarea class="ics-raw" id="icsText" readonly></textarea>
+      <button class="btn-dark btn-green" style="margin-top:0.6rem;" onclick="copyICS()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span id="copyBtnText">Copy to Clipboard</span>
+      </button>
+
+      <!-- Notes section -->
+      <div class="notes-section" id="notesSection">
+        <div class="card-title" style="margin-top:1rem;">Notes</div>
+        <div class="notes-toolbar">
+          <button onclick="notesWrap('**','**')" title="Bold"><b>B</b></button>
+          <button onclick="notesWrap('*','*')" title="Italic"><i>I</i></button>
+          <button onclick="notesInsertLine('### ')" title="Heading">H</button>
+          <div class="sep"></div>
+          <button onclick="notesInsertLine('- ')" title="Bullet list">• List</button>
+          <button onclick="notesInsertLine('1. ')" title="Numbered list">1. List</button>
+          <div class="sep"></div>
+          <button id="notesPreviewBtn" onclick="notesTogglePreview()">👁 Preview</button>
+        </div>
+        <textarea id="notesRaw" class="notes-raw" placeholder="Doctor instructions, allergies, special notes..." oninput="notesRender()" onkeydown="mdEnterKey(event)"></textarea>
+        <div id="notesPreview" class="notes-preview" style="display:none;"></div>
+      </div>
+
+      <button class="btn-reset" onclick="reset()">← Start over</button>
+    </div>
+  </div>
+
+</main>
+
+<script src="style.js"></script>
+<script>
+  let appMode = 'single';      // 'single' | 'rotation'
+  let singleEndMode = 'doses'; // 'doses' | 'days'
+  let rotEndMode = 'duration'; // 'duration' | 'doses'
+  let advancedMode = false;
+  let tempUnit = 'F'; // 'F' | 'C'
+  let scheduleEvents = [];     // unified event list for ICS
+  let icsContent = '';
+
+  // ── Init dates ──────────────────────────────────────────
+  const todayStr = (() => {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
+  })();
+  document.getElementById('s_startDate').value = todayStr;
+  document.getElementById('r_startDate').value = todayStr;
+  // Load from URL if params present
+  window.addEventListener('DOMContentLoaded', loadFromURL);
+
+  // ── Mode switches ────────────────────────────────────────
+  function setAppMode(m) {
+    appMode = m;
+    document.getElementById('modeSingleBtn').classList.toggle('active', m === 'single');
+    document.getElementById('modeRotationBtn').classList.toggle('active', m === 'rotation');
+    document.getElementById('section-single').style.display   = m === 'single'   ? 'block' : 'none';
+    document.getElementById('section-rotation').style.display = m === 'rotation' ? 'block' : 'none';
+  }
+
+  function setTempUnit(u) {
+    tempUnit = u;
+    document.getElementById('r_tempFBtn').classList.toggle('active', u === 'F');
+    document.getElementById('r_tempCBtn').classList.toggle('active', u === 'C');
+  }
+
+  function setSingleMode(m) {
+    singleEndMode = m;
+    document.getElementById('s_byDosesBtn').classList.toggle('active', m === 'doses');
+    document.getElementById('s_byDaysBtn').classList.toggle('active', m === 'days');
+    document.getElementById('s_endHint').textContent = m === 'doses' ? 'Enter total number of doses' : 'Enter number of days';
+  }
+
+  function toggleAdvanced() {
+    advancedMode = !advancedMode;
+    document.getElementById('advancedSection').style.display = advancedMode ? 'block' : 'none';
+    document.getElementById('advancedArrow').textContent = advancedMode ? '▼' : '▶';
+    updateAdvancedLabels();
+  }
+
+  function updateAdvancedLabels() {
+    const m1n = document.getElementById('r_med1Name').value.trim() || 'Med 1';
+    const m2n = document.getElementById('r_med2Name') ? document.getElementById('r_med2Name').value.trim() || 'Med 2' : 'Med 2';
+    const m3n = document.getElementById('r_med3Name') ? document.getElementById('r_med3Name').value.trim() || 'Med 3' : 'Med 3';
+    document.getElementById('adv_med1_label').textContent = m1n + ' — repeats every';
+    document.getElementById('adv_med2_label').textContent = m2n + ' — repeats every';
+    document.getElementById('adv_med3_label').textContent = m3n + ' — repeats every';
+  }
+
+  // Track how many meds are active
+  let activeMeds = 1;
+
+  function addMed(n) {
+    if (n === 2) {
+      document.getElementById('addMed2Row').style.display = 'none';
+      document.getElementById('med2Block').style.display = 'flex';
+      document.getElementById('advancedToggleRow').style.display = 'block';
+      activeMeds = 2;
+      updateHintText();
+    } else if (n === 3) {
+      document.getElementById('addMed3Row').style.display = 'none';
+      document.getElementById('med3Block').style.display = 'block';
+      document.getElementById('adv_med3_field').style.display = 'block';
+      activeMeds = 3;
+      updateHintText();
+    }
+    updateAdvancedLabels();
+  }
+
+  function removeMed(n) {
+    if (n === 3) {
+      document.getElementById('med3Block').style.display = 'none';
+      document.getElementById('addMed3Row').style.display = 'flex';
+      document.getElementById('adv_med3_field').style.display = 'none';
+      document.getElementById('r_med3Name').value = '';
+      document.getElementById('r_med3Dose').value = '';
+      activeMeds = 2;
+      updateHintText();
+    } else if (n === 2) {
+      document.getElementById('med2Block').style.display = 'none';
+      document.getElementById('addMed2Row').style.display = 'flex';
+      document.getElementById('advancedToggleRow').style.display = 'none';
+      // Also remove med3 if it was added
+      document.getElementById('med3Block').style.display = 'none';
+      document.getElementById('addMed3Row').style.display = 'flex';
+      document.getElementById('adv_med3_field').style.display = 'none';
+      document.getElementById('r_med2Name').value = 'Motrin';
+      document.getElementById('r_med2Dose').value = '';
+      document.getElementById('r_med3Name').value = '';
+      document.getElementById('r_med3Dose').value = '';
+      activeMeds = 1;
+      if (advancedMode) toggleAdvanced(); // collapse advanced if open
+      updateHintText();
+    }
+  }
+
+  function updateHintText() {
+    const hint = document.getElementById('r_intervalHint');
+    if (!hint) return;
+    if (activeMeds === 1) {
+      hint.textContent = 'Time between each dose. e.g. 4h: Tylenol 8am → Tylenol 12pm';
+    } else if (activeMeds === 2) {
+      hint.textContent = 'Time between each dose. e.g. 4h: Tylenol 8am → Motrin 12pm → Tylenol 4pm';
+    } else {
+      hint.textContent = 'Time between each dose, cycling through all medications in order.';
+    }
+  }
+
+  function setRotationMode(m) {
+    rotEndMode = m;
+    document.getElementById('r_byDurationBtn').classList.toggle('active', m === 'duration');
+    document.getElementById('r_byDosesBtn').classList.toggle('active', m === 'doses');
+    document.getElementById('r_endHint').textContent = m === 'duration'
+      ? 'Total hours for both meds combined (e.g. 12 = 8am–8pm)'
+      : 'Total doses per medication (e.g. 3 = 3 Tylenol + 3 Motrin)';
+  }
+
+  // ── Helpers ──────────────────────────────────────────────
+  function pad(n) { return String(n).padStart(2,'0'); }
+  function toICSDate(dt) {
+    return `${dt.getFullYear()}${pad(dt.getMonth()+1)}${pad(dt.getDate())}T${pad(dt.getHours())}${pad(dt.getMinutes())}00`;
+  }
+  const DAY = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function fmtDate(dt) { return `${DAY[dt.getDay()]}, ${MON[dt.getMonth()]} ${dt.getDate()}`; }
+  function fmtTime(dt) { return dt.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}); }
+
+  // ── Generate ─────────────────────────────────────────────
+  function generate() {
+    if (appMode === 'single') generateSingle();
+    else generateRotation();
+  }
+
+  function generateSingle() {
+    const medName = document.getElementById('s_medName').value.trim() || 'Medication';
+    const dosage  = document.getElementById('s_dosage').value.trim();
+    const freq    = parseInt(document.getElementById('s_frequency').value);
+    const dateVal = document.getElementById('s_startDate').value;
+    const timeVal = document.getElementById('s_startTime').value;
+    const endVal  = parseInt(document.getElementById('s_endValue').value);
+    if (!dateVal || !timeVal || isNaN(endVal)) { alert('Please fill in all fields.'); return; }
+
+    const [y,mo,d] = dateVal.split('-').map(Number);
+    const [h,mi]   = timeVal.split(':').map(Number);
+    const start = new Date(y, mo-1, d, h, mi, 0);
+    const total = singleEndMode === 'doses' ? endVal : endVal * freq;
+    const gapMs = (24/freq) * 3600000;
+
+    const doses = Array.from({length: total}, (_,i) => new Date(start.getTime() + i*gapMs));
+
+    // Build unified row list with 2hr checkpoints
+    const rows = doses.map((dt, i) => ({type:'dose', dt, idx:i, total:doses.length}));
+
+    // Render
+    const patient = document.getElementById('patientName').value.trim();
+    document.getElementById('outTitle').textContent = (patient ? patient + ' — ' : '') + medName + (dosage ? ` (${dosage})` : '');
+    const FREQ = ['','Once daily','Twice daily','Three times daily','Four times daily'];
+    setMeta([
+      ...(patient ? [{text: patient, cls: 'pill-neutral'}] : []),
+      {text: `${total} doses`, cls: 'pill-neutral'},
+      {text: FREQ[freq], cls: 'pill-neutral'}
+    ]);
+    
+    document.getElementById('legendMed1Label').textContent = medName;
+
+    renderRows(rows);
+    scheduleEvents = doses.map((dt,i) => ({
+      dt, summary: `Dose ${i+1}/${total}: ${medName}${dosage?' '+dosage:''}${patient?' ('+patient+')':''}`,
+      desc: i===0?'First dose':i===total-1?'Final dose':`Dose ${i+1} of ${total}`
+    }));
+    icsContent = buildICS(scheduleEvents);
+    document.getElementById('icsText').value = icsContent;
+    showOutput(medName);
+  }
+
+  function generateRotation() {
+    // Build meds array from however many are active
+    const medsData = [];
+    const colors   = [1, 2, 3];
+    const names    = ['r_med1Name','r_med2Name','r_med3Name'];
+    const doses    = ['r_med1Dose','r_med2Dose','r_med3Dose'];
+    const advIds   = ['r_interval_med1','r_interval_med2','r_interval_med3'];
+
+    for (let i = 0; i < activeMeds; i++) {
+      medsData.push({
+        med:    i + 1,
+        name:   document.getElementById(names[i]).value.trim() || ('Med ' + (i+1)),
+        dosage: document.getElementById(doses[i]).value.trim(),
+        advEl:  advIds[i]
+      });
+    }
+
+    const intervalHrs = parseInt(document.getElementById('r_interval').value);
+    const checkHrs    = parseInt(document.getElementById('r_checkInterval').value);
+    const dateVal     = document.getElementById('r_startDate').value;
+    const timeVal     = document.getElementById('r_startTime').value;
+    const endVal      = parseInt(document.getElementById('r_endValue').value);
+    if (!dateVal || !timeVal || isNaN(endVal)) { alert('Please fill in all fields.'); return; }
+
+    const [y,mo,d] = dateVal.split('-').map(Number);
+    const [h,mi]   = timeVal.split(':').map(Number);
+    const start = new Date(y, mo-1, d, h, mi, 0);
+
+    const allDoses = [];
+
+    if (!advancedMode || activeMeds === 1) {
+      // Standard: round-robin through meds at shared interval
+      const gapMs = intervalHrs * 3600000;
+      let totalSlots;
+      if (rotEndMode === 'duration') {
+        totalSlots = Math.floor(endVal * 3600000 / gapMs);
+      } else {
+        totalSlots = endVal * activeMeds;
+      }
+      for (let i = 0; i < totalSlots; i++) {
+        const m = medsData[i % activeMeds];
+        allDoses.push({
+          dt: new Date(start.getTime() + i * gapMs),
+          med: m.med, name: m.name, dosage: m.dosage,
+          idx: Math.floor(i / activeMeds) + 1
+        });
+      }
+    } else {
+      // Advanced: strict round-robin, each med waits its own interval
+      const gapMsArr = medsData.map(m => parseInt(document.getElementById(m.advEl).value) * 3600000);
+      const avgGap   = gapMsArr.reduce((a,b)=>a+b,0) / gapMsArr.length;
+      const endMs    = rotEndMode === 'duration'
+        ? endVal * 3600000
+        : endVal * activeMeds * avgGap;
+
+      let t = start.getTime();
+      let ci = 0; // current med index in round-robin
+      const idxCounters = medsData.map(() => 1);
+
+      while (t <= start.getTime() + endMs) {
+        const m = medsData[ci];
+        allDoses.push({
+          dt: new Date(t), med: m.med, name: m.name, dosage: m.dosage,
+          idx: idxCounters[ci]
+        });
+        t += gapMsArr[ci];
+        idxCounters[ci]++;
+        ci = (ci + 1) % activeMeds;
+      }
+
+      // Trim to doses-each if needed
+      if (rotEndMode === 'doses') {
+        const kept = [];
+        const perMedCount = medsData.map(() => 0);
+        for (const dose of allDoses) {
+          const mi = dose.med - 1;
+          if (perMedCount[mi] < endVal) { kept.push(dose); perMedCount[mi]++; }
+        }
+        allDoses.length = 0; allDoses.push(...kept);
+        allDoses.sort((a,b) => a.dt - b.dt);
+        // Re-index
+        const reIdx = medsData.map(() => 1);
+        allDoses.forEach(d => { d.idx = reIdx[d.med-1]++; });
+      }
+    }
+
+    // Build rows with checkpoints
+    const rows = buildRotationRowsWithCheckpoints(allDoses, checkHrs);
+
+    // Output title + meta
+    const patient2 = document.getElementById('patientName').value.trim();
+    const medNames  = medsData.map(m => m.name).join(' / ');
+    document.getElementById('outTitle').textContent =
+      (patient2 ? patient2 + ' — ' : '') + medNames + ' Fever Reduction';
+
+    const pillClasses = ['pill-med1','pill-med2','pill-med3'];
+    setMeta([
+      ...(patient2 ? [{text: patient2, cls: 'pill-neutral'}] : []),
+      ...medsData.map((m,i) => ({text: m.name + (m.dosage ? ' ' + m.dosage : ''), cls: pillClasses[i]})),
+      {text: advancedMode && activeMeds > 1
+        ? medsData.map((m,i) => m.name + ' every ' + (parseInt(document.getElementById(m.advEl).value)) + 'h').join(' · ')
+        : 'every ' + intervalHrs + 'h rotating', cls: 'pill-neutral'},
+      {text: 'Temp in °' + tempUnit, cls: 'pill-neutral'}
+    ]);
+
+    // Legend
+    document.getElementById('legendMed1Label').textContent = medsData[0].name + (medsData[0].dosage ? ' ' + medsData[0].dosage : '');
+    const med2item = document.getElementById('legendMed2Item');
+    const med3item = document.getElementById('legendMed3Item');
+    if (activeMeds >= 2) {
+      med2item.style.display = 'flex';
+      document.getElementById('legendMed2Label').textContent = medsData[1].name + (medsData[1].dosage ? ' ' + medsData[1].dosage : '');
+    } else { med2item.style.display = 'none'; }
+    if (activeMeds >= 3) {
+      med3item.style.display = 'flex';
+      document.getElementById('legendMed3Label').textContent = medsData[2].name + (medsData[2].dosage ? ' ' + medsData[2].dosage : '');
+    } else { med3item.style.display = 'none'; }
+
+    renderRotationRows(rows, medsData);
+
+    scheduleEvents = allDoses.map(d => ({
+      dt: d.dt,
+      summary: d.name + (d.dosage ? ' ' + d.dosage : '') + ' — Dose ' + d.idx + (patient2 ? ' (' + patient2 + ')' : ''),
+      desc: d.name + (d.dosage ? ' (' + d.dosage + ')' : '')
+    }));
+    icsContent = buildICS(scheduleEvents);
+    document.getElementById('icsText').value = icsContent;
+    showOutput(medNames);
+  }
+
+
+  function buildRowsWithCheckpoints(doses, _, intervalHrs) {
+    // Insert 2-hour checkpoints between doses
+    const rows = [];
+    doses.forEach((dt, i) => {
+      rows.push({type:'dose', dt, idx:i, total:doses.length});
+      if (i < doses.length - 1) {
+        const next = doses[i+1];
+        const gapMs = next - dt;
+        const steps = Math.floor(gapMs / (intervalHrs * 3600000));
+        for (let s = 1; s < steps; s++) {
+          rows.push({type:'checkpoint', dt: new Date(dt.getTime() + s * intervalHrs * 3600000)});
+        }
+      }
+    });
+    return rows;
+  }
+
+  function buildRotationRowsWithCheckpoints(doses, checkHrs) {
+    if (!doses.length) return [];
+    const checkMs   = checkHrs * 3600000;
+    const startTime = doses[0].dt.getTime();
+    const endTime   = doses[doses.length - 1].dt.getTime();
+
+    // Build checkpoint set
+    const checkTimes = new Set();
+    let t = startTime;
+    while (t <= endTime) { checkTimes.add(t); t += checkMs; }
+
+    // Group all doses by timestamp (multiple meds may share a slot)
+    const dosesByTime = new Map();
+    doses.forEach(d => {
+      const ts = d.dt.getTime();
+      if (!dosesByTime.has(ts)) dosesByTime.set(ts, []);
+      dosesByTime.get(ts).push(d);
+    });
+
+    // Collect every unique timestamp we need to emit (checkpoints + all dose times)
+    const allTimes = new Set([...checkTimes]);
+    dosesByTime.forEach((_, ts) => allTimes.add(ts));
+
+    const rows = [];
+    allTimes.forEach(ts => {
+      const isCheck = checkTimes.has(ts);
+      const dosesHere = dosesByTime.get(ts) || [];
+
+      if (dosesHere.length === 0) {
+        // Pure checkpoint slot
+        rows.push({type:'checkpoint', dt: new Date(ts)});
+      } else {
+        // One row per dose; first dose absorbs the checkpoint if applicable
+        dosesHere.forEach((d, i) => {
+          rows.push({type:'dose', ...d, alsoCheck: isCheck && i === 0});
+        });
+      }
+    });
+
+    rows.sort((a, b) => a.dt.getTime() - b.dt.getTime());
+    return rows;
+  }
+
+  // ── Render helpers ───────────────────────────────────────
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+
+  function renderRows(rows) {
+    const tbody = document.getElementById('scheduleRows');
+    tbody.innerHTML = '';
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      if (r.type === 'checkpoint') {
+        tr.className = 'row-checkpoint';
+        const tempLine2 = tempUnit === 'F'
+          ? '<span class="temp-writein">___._</span>'
+          : '<span class="temp-writein">__._</span>';
+        tr.innerHTML = `
+          <td>${fmtTime(r.dt)}</td>
+          <td>${fmtDate(r.dt)}</td>
+          <td><span class="dot dot-check"></span>Temp check</td>
+          <td></td>
+          <td class="temp-cell">${tempLine2}</td>`;
+      } else {
+        const isFirst = r.idx === 0;
+        const isLast  = r.idx === r.total - 1;
+        tr.className  = 'row-med1' + (isFirst?' row-first':'') + (isLast?' row-last':'');
+        const badge = isFirst ? '<span class="badge badge-first">First</span>'
+                    : isLast  ? '<span class="badge badge-last">Last</span>' : '';
+        tr.innerHTML = `
+          <td>${fmtTime(r.dt)}</td>
+          <td>${fmtDate(r.dt)}${badge}</td>
+          <td><span class="dot dot-med1"></span>Give dose ${r.idx+1} of ${r.total}</td>
+          <td></td>
+          <td></td>`;
+      }
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderRotationRows(rows, medsData) {
+    const rowClasses = ['row-med1','row-med2','row-med3'];
+    const dotClasses = ['dot-med1','dot-med2','dot-med3'];
+    const tbody = document.getElementById('scheduleRows');
+    tbody.innerHTML = '';
+
+    // Per-med dose lists for count tracking
+    const medDoseLists = medsData.map((m,i) =>
+      rows.filter(r => r.type === 'dose' && r.med === m.med)
+    );
+
+    const allDoseRows = rows.filter(r => r.type === 'dose');
+    const lastDose    = allDoseRows[allDoseRows.length - 1];
+
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      if (r.type === 'checkpoint') {
+        tr.className = 'row-checkpoint';
+        const tw = tempUnit === 'F' ? '___._' : '__._';
+        tr.innerHTML = `
+          <td>${fmtTime(r.dt)}</td>
+          <td>${fmtDate(r.dt)}</td>
+          <td><span class="dot dot-check"></span>Temp check</td>
+          <td></td>
+          <td class="temp-cell"><span class="temp-writein">${tw}</span></td>`;
+      } else {
+        const mi       = r.med - 1;
+        const medDoses = medDoseLists[mi] || [];
+        const doseNum  = medDoses.findIndex(x => x.dt.getTime() === r.dt.getTime()) + 1;
+        const isFirst  = r === allDoseRows[0];
+        const isLast   = r === lastDose;
+        tr.className   = rowClasses[mi] + (isFirst ? ' row-first' : '') + (isLast ? ' row-last' : '');
+        const badge    = isFirst ? '<span class="badge badge-first">Start</span>'
+                       : isLast  ? '<span class="badge badge-last">Last</span>' : '';
+        const tw       = tempUnit === 'F' ? '___._' : '__._';
+        const tempCell = r.alsoCheck
+          ? `<td class="temp-cell" style="white-space:nowrap"><span class="temp-writein">${tw}</span></td>`
+          : `<td></td>`;
+        const m = medsData[mi];
+        tr.innerHTML = `
+          <td>${fmtTime(r.dt)}</td>
+          <td>${fmtDate(r.dt)}${badge}</td>
+          <td><span class="dot ${dotClasses[mi]}"></span>${escapeHtml(m.name)}${m.dosage ? ' — ' + escapeHtml(m.dosage) : ''}</td>
+          <td>Dose ${doseNum} of ${medDoses.length}</td>
+          ${tempCell}`;
+      }
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ── Meta / output helpers ────────────────────────────────
+
+  function setMeta(pills) {
+    const el = document.getElementById('outMeta');
+    el.innerHTML = pills.map(p => `<span class="meta-pill ${p.cls}">${escapeHtml(p.text)}</span>`).join('');
+  }
+
+
+
+  function showOutput(title) {
+    const patient = document.getElementById('patientName').value.trim();
+    // Print header meta
+    const generated = new Date().toLocaleDateString([], {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    document.getElementById('printHeaderMeta').innerHTML =
+      `<div style="font-family:var(--mono);font-size:0.7rem;color:#666;margin-bottom:0.4cm;">Generated ${generated} · RxCal · rxcal.app${patient ? ' · Prescribed to: ' + escapeHtml(patient) : ''}</div>`;
+
+    document.getElementById('tempColHeader').textContent = 'Temp °' + tempUnit;
+    document.getElementById('notesColHeader').style.display = appMode === 'single' ? 'none' : '';
+    document.getElementById('tempColHeader').style.display  = appMode === 'single' ? 'none' : '';
+    initNotesEditor();
+    document.getElementById('form-card').style.display = 'none';
+    document.getElementById('output').style.display = 'block';
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  // ── ICS ──────────────────────────────────────────────────
+
+  function buildICS(events) {
+    const lines = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//RxCal//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH'];
+    events.forEach((ev, i) => {
+      const dtEnd = new Date(ev.dt.getTime() + 15*60*1000);
+      lines.push(
+        'BEGIN:VEVENT',
+        `UID:rxcal-${ev.dt.getTime()}-${i}@rxcal.app`,
+        `DTSTAMP:${toICSDate(new Date())}`,
+        `DTSTART:${toICSDate(ev.dt)}`,
+        `DTEND:${toICSDate(dtEnd)}`,
+        `SUMMARY:${ev.summary}`,
+        `DESCRIPTION:${ev.desc}`,
+        'BEGIN:VALARM','TRIGGER:-PT5M','ACTION:DISPLAY',
+        `DESCRIPTION:${ev.summary}`,
+        'END:VALARM','END:VEVENT'
+      );
+    });
+    lines.push('END:VCALENDAR');
+    return lines.join('\r\n');
+  }
+
+  function downloadICS() {
+    if (!icsContent) return;
+    const filename = document.getElementById('outTitle').textContent.replace(/[^a-z0-9]/gi,'-').toLowerCase() + '.ics';
+    try {
+      const blob = new Blob([icsContent], {type:'text/calendar;charset=utf-8'});
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    } catch(e) {
+      window.open('data:text/calendar;charset=utf-8,' + encodeURIComponent(icsContent), '_blank');
+    }
+  }
+
+  function copyICS() {
+    if (!icsContent) return;
+    const btn  = document.getElementById('copyBtnText');
+    const done = () => { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy to Clipboard', 2500); };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(icsContent).then(done).catch(() => {
+        document.getElementById('icsText').select(); document.execCommand('copy'); done();
+      });
+    } else {
+      document.getElementById('icsText').select(); document.execCommand('copy'); done();
+    }
+  }
+
+  function swapMeds() {
+    // Swap med1 <-> med2 fields
+    const n1 = document.getElementById('r_med1Name');
+    const d1 = document.getElementById('r_med1Dose');
+    const n2 = document.getElementById('r_med2Name');
+    const d2 = document.getElementById('r_med2Dose');
+    [n1.value, n2.value] = [n2.value, n1.value];
+    [d1.value, d2.value] = [d2.value, d1.value];
+    updateAdvancedLabels();
+  }
+
+  // ── URL state encoding ───────────────────────────────────
+
+  function encodeState() {
+    const p = new URLSearchParams();
+    p.set('mode', appMode);
+    p.set('patient', document.getElementById('patientName').value.trim());
+
+    if (appMode === 'single') {
+      p.set('med',   document.getElementById('s_medName').value.trim());
+      p.set('dose',  document.getElementById('s_dosage').value.trim());
+      p.set('freq',  document.getElementById('s_frequency').value);
+      p.set('date',  document.getElementById('s_startDate').value);
+      p.set('time',  document.getElementById('s_startTime').value);
+      p.set('endby', singleEndMode);
+      p.set('endval',document.getElementById('s_endValue').value);
+    } else {
+      p.set('m1n',  document.getElementById('r_med1Name').value.trim());
+      p.set('m1d',  document.getElementById('r_med1Dose').value.trim());
+      p.set('m2n',  document.getElementById('r_med2Name').value.trim());
+      p.set('m2d',  document.getElementById('r_med2Dose').value.trim());
+      p.set('date', document.getElementById('r_startDate').value);
+      p.set('time', document.getElementById('r_startTime').value);
+      p.set('ivl',  document.getElementById('r_interval').value);
+      p.set('chk',  document.getElementById('r_checkInterval').value);
+      p.set('endby',rotEndMode);
+      p.set('endval',document.getElementById('r_endValue').value);
+      p.set('tmp',  tempUnit);
+      p.set('adv',  advancedMode ? '1' : '0');
+      if (advancedMode) {
+        p.set('ivl1', document.getElementById('r_interval_med1').value);
+        p.set('ivl2', document.getElementById('r_interval_med2').value);
+      }
+    }
+    return window.location.origin + window.location.pathname + '?' + p.toString();
+  }
+
+  function shareSchedule() {
+    const url = encodeState();
+    const btn = document.getElementById('shareBtnText');
+    const done = () => { btn.textContent = 'Link Copied!'; setTimeout(() => btn.textContent = 'Share / Copy Link', 2500); };
+    if (navigator.share) {
+      navigator.share({ title: 'RxCal Schedule', url }).catch(() => {});
+      done();
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(done);
+    } else {
+      prompt('Copy this link:', url);
+    }
+  }
+
+  function loadFromURL() {
+    const p = new URLSearchParams(window.location.search);
+    if (!p.has('mode')) return;
+
+    const mode = p.get('mode');
+    setAppMode(mode);
+    const patient = p.get('patient') || '';
+    document.getElementById('patientName').value = patient;
+
+    if (mode === 'single') {
+      document.getElementById('s_medName').value  = p.get('med')    || '';
+      document.getElementById('s_dosage').value   = p.get('dose')   || '';
+      document.getElementById('s_frequency').value= p.get('freq')   || '2';
+      document.getElementById('s_startDate').value= p.get('date')   || todayStr;
+      document.getElementById('s_startTime').value= p.get('time')   || '08:00';
+      document.getElementById('s_endValue').value = p.get('endval') || '10';
+      setSingleMode(p.get('endby') || 'doses');
+    } else {
+      document.getElementById('r_med1Name').value   = p.get('m1n')  || 'Tylenol';
+      document.getElementById('r_med1Dose').value   = p.get('m1d')  || '';
+      document.getElementById('r_med2Name').value   = p.get('m2n')  || 'Motrin';
+      document.getElementById('r_med2Dose').value   = p.get('m2d')  || '';
+      document.getElementById('r_startDate').value  = p.get('date') || todayStr;
+      document.getElementById('r_startTime').value  = p.get('time') || '08:00';
+      document.getElementById('r_interval').value   = p.get('ivl')  || '4';
+      document.getElementById('r_checkInterval').value = p.get('chk') || '2';
+      document.getElementById('r_endValue').value   = p.get('endval') || '48';
+      setRotationMode(p.get('endby') || 'duration');
+      setTempUnit(p.get('tmp') || 'F');
+      if (p.get('adv') === '1') {
+        toggleAdvanced();
+        document.getElementById('r_interval_med1').value = p.get('ivl1') || '4';
+        document.getElementById('r_interval_med2').value = p.get('ivl2') || '6';
+      }
+    }
+    // Auto-generate if all required fields present
+    generate();
+  }
+
+  function reset() {
+    document.getElementById('form-card').style.display = 'block';
+    document.getElementById('output').style.display = 'none';
+    document.getElementById('icsText').value = '';
+    document.getElementById('copyBtnText').textContent = 'Copy to Clipboard';
+    // Reset fever reduction panels
+    activeMeds = 1;
+    document.getElementById('addMed2Row').style.display = 'flex';
+    document.getElementById('med2Block').style.display = 'none';
+    document.getElementById('med3Block').style.display = 'none';
+    document.getElementById('addMed3Row').style.display = 'flex';
+    document.getElementById('advancedToggleRow').style.display = 'none';
+    if (advancedMode) {
+      advancedMode = false;
+      document.getElementById('advancedSection').style.display = 'none';
+      document.getElementById('advancedArrow').textContent = '▶';
+    }
+    const nr = document.getElementById('notesRaw');
+    if (nr) { nr.value = ''; nr.style.display = 'block'; }
+    const np = document.getElementById('notesPreview');
+    if (np) { np.innerHTML = ''; np.style.display = 'none'; }
+    notesMode = 'write';
+    const pb = document.getElementById('notesPreviewBtn');
+    if (pb) { pb.textContent = '👁 Preview'; pb.classList.remove('active'); }
+    scheduleEvents = []; icsContent = '';
+  }
+
+  // ── Notes editor ─────────────────────────────────────────
+  let notesMode = 'write'; // 'write' | 'preview'
+
+  function initNotesEditor() {
+    // Already in DOM, nothing to init — just show the section
+  }
+
+  function mdEnterKey(e) {
+    if (e.key !== 'Enter' || e.shiftKey) return;
+    e.preventDefault();
+    const ta = e.target;
+    const start = ta.selectionStart;
+    const end   = ta.selectionEnd;
+    ta.value = ta.value.slice(0, start) + '\n' + ta.value.slice(end);
+    ta.selectionStart = ta.selectionEnd = start + 1;
+    notesRender();
+  }
+
+  function notesWrap(before, after) {
+    const ta = document.getElementById('notesRaw');
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    const sel = ta.value.slice(s, e) || 'text';
+    ta.value = ta.value.slice(0, s) + before + sel + after + ta.value.slice(e);
+    ta.selectionStart = s + before.length;
+    ta.selectionEnd   = s + before.length + sel.length;
+    ta.focus();
+    notesRender();
+  }
+
+  function notesInsertLine(prefix) {
+    const ta = document.getElementById('notesRaw');
+    const s = ta.selectionStart;
+    const lineStart = ta.value.lastIndexOf('\n', s - 1) + 1;
+    const before = ta.value.slice(0, lineStart);
+    const after  = ta.value.slice(lineStart);
+    ta.value = before + prefix + after;
+    ta.selectionStart = ta.selectionEnd = lineStart + prefix.length;
+    ta.focus();
+    notesRender();
+  }
+
+  function notesRender() {
+    const raw = document.getElementById('notesRaw').value;
+    document.getElementById('notesPreview').innerHTML = parseMarkdown(raw);
+  }
+
+  function notesTogglePreview() {
+    notesMode = notesMode === 'write' ? 'preview' : 'write';
+    const ta  = document.getElementById('notesRaw');
+    const pre = document.getElementById('notesPreview');
+    const btn = document.getElementById('notesPreviewBtn');
+    if (notesMode === 'preview') {
+      notesRender();
+      ta.style.display  = 'none';
+      pre.style.display = 'block';
+      btn.textContent   = '✎ Edit';
+      btn.classList.add('active');
+    } else {
+      ta.style.display  = 'block';
+      pre.style.display = 'none';
+      btn.textContent   = '👁 Preview';
+      btn.classList.remove('active');
+    }
+  }
+
+  function parseMarkdown(md) {
+    const lines = md.split('\n');
+    let out = '';
+    let inUl = false, inOl = false;
+
+    for (let line of lines) {
+      const ulMatch = line.match(/^[*-] (.+)$/);
+      const olMatch = line.match(/^\d+\. (.+)$/);
+      const h3 = line.match(/^### (.+)$/);
+      const h2 = line.match(/^## (.+)$/);
+      const h1 = line.match(/^# (.+)$/);
+
+      if (ulMatch) {
+        if (inOl) { out += '</ol>'; inOl = false; }
+        if (!inUl) { out += '<ul>'; inUl = true; }
+        out += '<li>' + inline(ulMatch[1]) + '</li>';
+      } else if (olMatch) {
+        if (inUl) { out += '</ul>'; inUl = false; }
+        if (!inOl) { out += '<ol>'; inOl = true; }
+        out += '<li>' + inline(olMatch[1]) + '</li>';
+      } else {
+        if (inUl) { out += '</ul>'; inUl = false; }
+        if (inOl) { out += '</ol>'; inOl = false; }
+        if (h1) out += '<h1>' + inline(h1[1]) + '</h1>';
+        else if (h2) out += '<h2>' + inline(h2[1]) + '</h2>';
+        else if (h3) out += '<h3>' + inline(h3[1]) + '</h3>';
+        else if (line.trim() === '---') out += '<hr>';
+        else if (line.trim() === '') out += '<br>';
+        else out += '<p>' + inline(line) + '</p>';
+      }
+    }
+    if (inUl) out += '</ul>';
+    if (inOl) out += '</ol>';
+    return out;
+  }
+
+  function inline(s) {
+    return s
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/`(.+?)`/g, '<code>$1</code>');
+  }
+
+  // Print: show rendered preview, hide textarea
+  window.addEventListener('beforeprint', () => {
+    const ta  = document.getElementById('notesRaw');
+    const pre = document.getElementById('notesPreview');
+    if (!ta || !pre) return;
+    notesRender();
+    ta.style.display  = 'none';
+    pre.style.display = 'block';
+  });
+  window.addEventListener('afterprint', () => {
+    const ta  = document.getElementById('notesRaw');
+    const pre = document.getElementById('notesPreview');
+    if (!ta || !pre) return;
+    if (notesMode === 'write') {
+      ta.style.display  = 'block';
+      pre.style.display = 'none';
+    }
+  });
+
+
+
+  function dismissBanner(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  }
+
+</script>
+<footer class="site-footer">
+  <div class="footer-links">
+    <a href="about.html">About</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms</a>
+    <a href="https://github.com/joshhearne/rxcal" target="_blank" rel="noopener">GitHub</a>
+    <a href="style.html">Style</a>
+  </div>
+  <div class="footer-copy">© 2026 HearneTech · MIT License · rxcal.app</div>
+</footer>
+</body>
+</html>
