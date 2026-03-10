@@ -1,4 +1,4 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --cream: #faf7f2; --ink: #1a1410; --warm-mid: #8c7355; --accent: #c8502a;
     --accent-light: #f0ddd6; --border: #ddd5c8; --card: #ffffff; --success: #3a7d5e;
@@ -298,6 +298,8 @@
   }
   .site-footer a { color: var(--warm-mid); text-decoration: none; border-bottom: 1px solid var(--border); padding-bottom: 1px; transition: color 0.15s, border-color 0.15s; }
   .site-footer a:hover { color: var(--ink); border-color: var(--ink); }
+  .site-footer a.active { color: var(--accent); border-bottom: none; background: transparent; font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.03em; padding: 0.2rem 0.6rem; border: 1.5px solid var(--accent); border-radius: 999px; line-height: 1.4; }
+  .site-footer a.active:hover { color: var(--accent); border-color: var(--accent); opacity: 0.8; }
   .site-footer .footer-links { display: flex; justify-content: center; gap: 1.5rem; margin-bottom: 0.6rem; }
   .site-footer .footer-copy { color: #b0a090; font-size: 0.62rem; }
   @media print { .site-footer { display: none !important; } }
