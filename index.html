@@ -871,8 +871,17 @@
     return lines.join('\r\n');
   }
 
+  function isInAppBrowser() {
+    const ua = navigator.userAgent || '';
+    return /FBAN|FBAV|Instagram|Messenger|LinkedInApp|TikTok|Snapchat|Twitter|Line\/|KAKAOTALK|MicroMessenger/i.test(ua);
+  }
+
   function downloadICS() {
     if (!icsContent) return;
+    if (isInAppBrowser()) {
+      showInAppBrowserWarning();
+      return;
+    }
     const filename = document.getElementById('outTitle').textContent.replace(/[^a-z0-9]/gi,'-').toLowerCase() + '.ics';
     try {
       const blob = new Blob([icsContent], {type:'text/calendar;charset=utf-8'});
@@ -885,6 +894,25 @@
     } catch(e) {
       window.open('data:text/calendar;charset=utf-8,' + encodeURIComponent(icsContent), '_blank');
     }
+  }
+
+  function showInAppBrowserWarning() {
+    const existing = document.getElementById('inAppWarning');
+    if (existing) { existing.remove(); }
+    const box = document.createElement('div');
+    box.id = 'inAppWarning';
+    box.style.cssText = 'margin-top:0.75rem;padding:0.85rem 1rem;border-radius:8px;background:var(--disclaimer-bg,#221808);border:1px solid var(--disclaimer-border,#3a2c10);font-family:var(--mono);font-size:0.68rem;line-height:1.6;color:var(--warm-mid);position:relative;';
+    box.innerHTML = `
+      <button onclick="document.getElementById('inAppWarning').remove()" style="position:absolute;top:0.5rem;right:0.6rem;background:none;border:none;color:var(--warm-mid);cursor:pointer;font-size:1rem;line-height:1;">×</button>
+      <strong style="color:var(--ink);">⚠ In-app browser detected</strong><br>
+      Downloads are blocked by Facebook, Messenger, Instagram, and similar apps.<br><br>
+      <strong style="color:var(--ink);">To download the .ics file:</strong><br>
+      Open rxcal.app in <strong style="color:var(--ink);">Safari</strong> (iOS) or <strong style="color:var(--ink);">Chrome</strong> (Android) directly.<br><br>
+      Or use <strong style="color:var(--ink);">Copy to Clipboard</strong> below and manually save as <em>schedule.ics</em>.
+    `;
+    const dlBtn = document.querySelector('button[onclick="downloadICS()"]');
+    dlBtn.parentNode.insertAdjacentElement('afterend', box);
+    box.scrollIntoView({behavior:'smooth', block:'nearest'});
   }
 
   function copyICS() {
